@@ -1,0 +1,667 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Protein Counter</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f13;
+      --card: #1a1a24;
+      --card2: #222230;
+      --accent: #6c63ff;
+      --accent2: #8b85ff;
+      --green: #3ecf8e;
+      --yellow: #f5a623;
+      --red: #e05c5c;
+      --text: #f0f0f5;
+      --muted: #8888a8;
+      --border: #2e2e42;
+      --radius: 18px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+    }
+
+    h1 {
+      font-size: 1.6rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-bottom: 32px;
+    }
+
+    /* ── Counter Card ── */
+    .counter-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px 32px 28px;
+      width: 100%;
+      max-width: 420px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 24px;
+    }
+
+    .goal-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .goal-row input {
+      width: 64px;
+      background: var(--card2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.9rem;
+      text-align: center;
+      padding: 4px 8px;
+      outline: none;
+    }
+
+    .goal-row input:focus { border-color: var(--accent); }
+
+    .display {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .protein-value {
+      font-size: 7rem;
+      font-weight: 800;
+      line-height: 1;
+      letter-spacing: -0.04em;
+      color: var(--text);
+      min-width: 220px;
+      text-align: center;
+      transition: color 0.2s;
+    }
+
+    .protein-unit {
+      font-size: 1rem;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .progress-bar-wrap {
+      width: 100%;
+      height: 8px;
+      background: var(--card2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      border-radius: 99px;
+      background: var(--accent);
+      transition: width 0.3s ease, background 0.3s;
+      width: 0%;
+    }
+
+    /* ── +/- Buttons ── */
+    .btn-row {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .step-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      font-size: 2.4rem;
+      font-weight: 300;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s, opacity 0.15s;
+      user-select: none;
+    }
+
+    .step-btn:active { transform: scale(0.92); }
+
+    .btn-minus {
+      background: var(--card2);
+      color: var(--muted);
+      border: 1px solid var(--border);
+    }
+
+    .btn-minus:hover { color: var(--text); border-color: var(--muted); }
+
+    .btn-plus {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 24px rgba(108,99,255,0.45);
+    }
+
+    .btn-plus:hover { background: var(--accent2); }
+
+    .step-selector {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .step-chip {
+      padding: 5px 14px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      background: transparent;
+      color: var(--muted);
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .step-chip.active, .step-chip:hover {
+      background: var(--card2);
+      color: var(--text);
+      border-color: var(--accent);
+    }
+
+    /* ── Log Button ── */
+    .log-btn {
+      width: 100%;
+      padding: 20px;
+      border-radius: 14px;
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      cursor: pointer;
+      box-shadow: 0 4px 32px rgba(108,99,255,0.4);
+      transition: transform 0.1s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .log-btn:hover { background: var(--accent2); box-shadow: 0 6px 36px rgba(108,99,255,0.55); }
+    .log-btn:active { transform: scale(0.98); }
+
+    .log-btn.logged {
+      background: var(--green);
+      box-shadow: 0 4px 28px rgba(62,207,142,0.4);
+    }
+
+    /* ── Calendar ── */
+    .calendar-section {
+      width: 100%;
+      max-width: 420px;
+      margin-top: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .month-nav {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: color 0.15s, border-color 0.15s;
+    }
+
+    .nav-btn:hover { color: var(--text); border-color: var(--muted); }
+
+    .month-label {
+      font-size: 0.9rem;
+      color: var(--muted);
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+    }
+
+    .day-label {
+      text-align: center;
+      font-size: 0.7rem;
+      color: var(--muted);
+      padding: 4px 0;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .day-cell {
+      aspect-ratio: 1;
+      border-radius: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      gap: 2px;
+      cursor: default;
+      transition: transform 0.1s;
+      position: relative;
+    }
+
+    .day-cell.empty { background: transparent; }
+
+    .day-cell.future {
+      background: var(--card);
+      border: 1px solid var(--border);
+      opacity: 0.3;
+    }
+
+    .day-cell.no-log {
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+
+    .day-cell.logged-day {
+      cursor: pointer;
+    }
+
+    .day-cell.logged-day:hover { transform: scale(1.06); }
+
+    .day-cell.hit    { background: rgba(62,207,142,0.15); border: 1px solid rgba(62,207,142,0.4); }
+    .day-cell.close  { background: rgba(245,166,35,0.15); border: 1px solid rgba(245,166,35,0.4); }
+    .day-cell.miss   { background: rgba(224,92,92,0.15);  border: 1px solid rgba(224,92,92,0.4);  }
+
+    .day-num {
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1;
+    }
+
+    .day-cell.no-log .day-num { color: var(--muted); }
+    .day-cell.future .day-num { color: var(--muted); }
+
+    .day-g {
+      font-size: 0.62rem;
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .day-cell.hit .day-g   { color: var(--green); }
+    .day-cell.close .day-g { color: var(--yellow); }
+    .day-cell.miss .day-g  { color: var(--red); }
+
+    .day-cell.today-cell {
+      box-shadow: 0 0 0 2px var(--accent);
+    }
+
+    /* ── Legend ── */
+    .legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 3px;
+    }
+
+    .dot-hit   { background: var(--green); }
+    .dot-close { background: var(--yellow); }
+    .dot-miss  { background: var(--red); }
+    .dot-none  { background: var(--card2); border: 1px solid var(--border); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 32px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 0.9rem;
+      color: var(--text);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 999;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Protein Counter</h1>
+  <p class="subtitle">Track your daily protein intake</p>
+
+  <!-- Counter Card -->
+  <div class="counter-card">
+    <div class="goal-row">
+      <span>Daily goal:</span>
+      <input type="number" id="goalInput" value="150" min="1" max="999" />
+      <span>g</span>
+    </div>
+
+    <div class="display">
+      <div class="protein-value" id="displayValue">0</div>
+      <div class="protein-unit">grams today</div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <div class="btn-row">
+      <button class="step-btn btn-minus" id="btnMinus">−</button>
+      <button class="step-btn btn-plus"  id="btnPlus">+</button>
+    </div>
+
+    <div class="step-selector">
+      <button class="step-chip active" data-step="5">+5g</button>
+      <button class="step-chip" data-step="10">+10g</button>
+      <button class="step-chip" data-step="20">+20g</button>
+      <button class="step-chip" data-step="30">+30g</button>
+      <button class="step-chip" data-step="50">+50g</button>
+    </div>
+
+    <button class="log-btn" id="logBtn">Log Today's Protein</button>
+  </div>
+
+  <!-- Calendar -->
+  <div class="calendar-section">
+    <div class="section-header">
+      <span class="section-title">History</span>
+      <div class="month-nav">
+        <button class="nav-btn" id="prevMonth">&#8592;</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="nav-btn" id="nextMonth">&#8594;</button>
+      </div>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot dot-hit"></div> Goal met</div>
+      <div class="legend-item"><div class="legend-dot dot-close"></div> ≥ 75%</div>
+      <div class="legend-item"><div class="legend-dot dot-miss"></div> Below 75%</div>
+      <div class="legend-item"><div class="legend-dot dot-none"></div> No log</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const STORAGE_KEY = 'protein_log_v1';
+    const GOAL_KEY    = 'protein_goal_v1';
+    const TODAY_KEY   = 'protein_today_v1';
+
+    // ── State ──
+    let step = 5;
+    let currentGrams = 0;
+    let goal = parseInt(localStorage.getItem(GOAL_KEY)) || 150;
+    let viewYear, viewMonth;
+
+    // Load today's in-progress count
+    const todayStr = todayKey();
+    const savedToday = localStorage.getItem(TODAY_KEY);
+    if (savedToday) {
+      const parsed = JSON.parse(savedToday);
+      if (parsed.date === todayStr) currentGrams = parsed.grams;
+    }
+
+    function todayKey() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    function getLog() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+      catch { return {}; }
+    }
+
+    function saveLog(log) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(log));
+    }
+
+    // ── DOM refs ──
+    const displayValue = document.getElementById('displayValue');
+    const progressBar  = document.getElementById('progressBar');
+    const goalInput    = document.getElementById('goalInput');
+    const btnPlus      = document.getElementById('btnPlus');
+    const btnMinus     = document.getElementById('btnMinus');
+    const logBtn       = document.getElementById('logBtn');
+    const calendarGrid = document.getElementById('calendarGrid');
+    const monthLabel   = document.getElementById('monthLabel');
+    const toast        = document.getElementById('toast');
+
+    // ── Init ──
+    goalInput.value = goal;
+    render();
+    initCalendar();
+
+    // ── Goal ──
+    goalInput.addEventListener('change', () => {
+      goal = Math.max(1, parseInt(goalInput.value) || 150);
+      goalInput.value = goal;
+      localStorage.setItem(GOAL_KEY, goal);
+      render();
+      renderCalendar();
+    });
+
+    // ── Step chips ──
+    document.querySelectorAll('.step-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('.step-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        step = parseInt(chip.dataset.step);
+      });
+    });
+
+    // ── Counter buttons ──
+    btnPlus.addEventListener('click', () => {
+      currentGrams += step;
+      persistToday();
+      render();
+    });
+
+    btnMinus.addEventListener('click', () => {
+      currentGrams = Math.max(0, currentGrams - step);
+      persistToday();
+      render();
+    });
+
+    function persistToday() {
+      localStorage.setItem(TODAY_KEY, JSON.stringify({ date: todayStr, grams: currentGrams }));
+    }
+
+    // ── Log ──
+    logBtn.addEventListener('click', () => {
+      const log = getLog();
+      log[todayStr] = currentGrams;
+      saveLog(log);
+
+      logBtn.textContent = '✓ Logged!';
+      logBtn.classList.add('logged');
+      setTimeout(() => {
+        logBtn.textContent = "Log Today's Protein";
+        logBtn.classList.remove('logged');
+      }, 1800);
+
+      showToast(`${currentGrams}g logged for today`);
+      renderCalendar();
+    });
+
+    // ── Render display ──
+    function render() {
+      displayValue.textContent = currentGrams;
+      const pct = Math.min(100, (currentGrams / goal) * 100);
+      progressBar.style.width = pct + '%';
+      if (pct >= 100)      progressBar.style.background = 'var(--green)';
+      else if (pct >= 75)  progressBar.style.background = 'var(--yellow)';
+      else                 progressBar.style.background = 'var(--accent)';
+    }
+
+    // ── Calendar ──
+    function initCalendar() {
+      const now = new Date();
+      viewYear  = now.getFullYear();
+      viewMonth = now.getMonth();
+      renderCalendar();
+    }
+
+    document.getElementById('prevMonth').addEventListener('click', () => {
+      viewMonth--;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      renderCalendar();
+    });
+
+    document.getElementById('nextMonth').addEventListener('click', () => {
+      viewMonth++;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      renderCalendar();
+    });
+
+    const MONTHS = ['January','February','March','April','May','June',
+                    'July','August','September','October','November','December'];
+    const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    function renderCalendar() {
+      const log = getLog();
+      const now = new Date();
+      const todayDateStr = todayKey();
+
+      monthLabel.textContent = `${MONTHS[viewMonth]} ${viewYear}`;
+      calendarGrid.innerHTML = '';
+
+      // Day-of-week headers
+      DAYS.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-label';
+        el.textContent = d;
+        calendarGrid.appendChild(el);
+      });
+
+      const firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      // Empty cells before 1st
+      for (let i = 0; i < firstDay; i++) {
+        const el = document.createElement('div');
+        el.className = 'day-cell empty';
+        calendarGrid.appendChild(el);
+      }
+
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const isToday  = dateStr === todayDateStr;
+        const isFuture = dateStr > todayDateStr;
+        const grams    = log[dateStr];
+        const hasLog   = grams !== undefined;
+
+        const el = document.createElement('div');
+        el.className = 'day-cell';
+
+        if (isFuture) {
+          el.classList.add('future');
+        } else if (!hasLog) {
+          el.classList.add('no-log');
+        } else {
+          const pct = grams / goal;
+          if (pct >= 1)       el.classList.add('hit');
+          else if (pct >= 0.75) el.classList.add('close');
+          else                el.classList.add('miss');
+          el.classList.add('logged-day');
+
+          el.title = `${dateStr}: ${grams}g`;
+          el.addEventListener('click', () => showToast(`${dateStr}: ${grams}g protein`));
+        }
+
+        if (isToday) el.classList.add('today-cell');
+
+        const numEl = document.createElement('div');
+        numEl.className = 'day-num';
+        numEl.textContent = d;
+        el.appendChild(numEl);
+
+        if (hasLog && !isFuture) {
+          const gEl = document.createElement('div');
+          gEl.className = 'day-g';
+          gEl.textContent = grams + 'g';
+          el.appendChild(gEl);
+        }
+
+        calendarGrid.appendChild(el);
+      }
+    }
+
+    // ── Toast ──
+    let toastTimer;
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+    }
+  </script>
+</body>
+</html>
